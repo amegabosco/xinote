@@ -7,13 +7,13 @@ RUN apk add --no-cache python3 make g++
 WORKDIR /app
 
 # Copy package files
-COPY xinote-admin/package*.json ./
+COPY package*.json ./
 
 # Install dependencies
 RUN npm ci --only=production
 
 # Copy source code
-COPY xinote-admin/ ./
+COPY . ./
 
 # Build SvelteKit app
 RUN npm run build

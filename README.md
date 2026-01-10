@@ -28,11 +28,12 @@ This repository contains the complete Docker setup to deploy the Xinote backend 
 # SSH to your server or use DigitalOcean web console
 cd /opt
 
-# Clone this repository
-git clone https://github.com/amegabosco/xinote-backend.git
+# Clone this repository (full project including Flutter app)
+git clone https://github.com/amegabosco/xinote.git
+cd xinote
 
 # Set up database
-cd xinote-backend/docker/supabase
+cd docker/supabase
 ./setup-database.sh
 
 # Configure environment

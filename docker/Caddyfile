@@ -1,0 +1,72 @@
+# Caddyfile for Xinote Backend
+# Add this to your existing Caddy configuration at /opt/n8n-docker-caddy/Caddyfile
+
+xinote.amega.one {
+    # Automatic HTTPS with Let's Encrypt
+    tls {
+        # Uncomment if you use Cloudflare DNS
+        # dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+    }
+
+    # Security headers
+    header {
+        # Enable HSTS
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+
+        # Prevent MIME type sniffing
+        X-Content-Type-Options "nosniff"
+
+        # XSS Protection
+        X-Frame-Options "SAMEORIGIN"
+
+        # Content Security Policy
+        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
+
+        # Remove server header
+        -Server
+    }
+
+    # Request size limit (for audio uploads)
+    request_body {
+        max_size 100MB
+    }
+
+    # Reverse proxy to Xinote backend container
+    reverse_proxy xinote-backend:3000 {
+        # Health check
+        health_uri /api/health
+        health_interval 30s
+        health_timeout 10s
+
+        # Timeouts (important for long Whisper API calls)
+        transport http {
+            read_timeout 5m
+            write_timeout 5m
+        }
+
+        # Headers
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+
+    # Logs
+    log {
+        output file /var/log/caddy/xinote-access.log
+        format json
+    }
+
+    # Error handling
+    handle_errors {
+        @maintenance expression {http.error.status_code} == 502
+        handle @maintenance {
+            respond "Xinote backend is temporarily unavailable. Please try again shortly." 503
+        }
+    }
+}
+
+# Optional: Redirect www to non-www
+www.xinote.amega.one {
+    redir https://xinote.amega.one{uri} permanent
+}

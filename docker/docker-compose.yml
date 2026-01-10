@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  xinote-backend:
+    build:
+      context: ../xinote-admin
+      dockerfile: ../docker/Dockerfile
+    container_name: xinote-backend
+    restart: unless-stopped
+    environment:
+      # Node environment
+      NODE_ENV: production
+
+      # Server configuration
+      PORT: 3000
+      ORIGIN: https://xinote.amega.one
+
+      # Supabase configuration (uses your existing Supabase instance)
+      PUBLIC_SUPABASE_URL: ${SUPABASE_URL}
+      PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+
+      # OpenAI Whisper API
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+
+      # Security
+      JWT_SECRET: ${JWT_SECRET}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+
+      # File upload limits
+      MAX_FILE_SIZE: 100MB
+      UPLOAD_DIR: /app/uploads
+
+    volumes:
+      # Persistent storage for uploaded audio files
+      - xinote_uploads:/app/uploads
+      # Logs
+      - xinote_logs:/app/logs
+
+    networks:
+      - xinote_network
+      - supabase_default  # Connect to existing Supabase network
+
+    ports:
+      - "3001:3000"  # Expose on port 3001 (avoiding conflicts)
+
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    labels:
+      # Caddy reverse proxy labels (automatic HTTPS)
+      caddy: xinote.amega.one
+      caddy.reverse_proxy: "{{upstreams 3000}}"
+      caddy.tls.dns: cloudflare  # Adjust based on your Caddy DNS provider
+
+networks:
+  xinote_network:
+    driver: bridge
+    name: xinote_network
+
+  supabase_default:
+    external: true  # Use existing Supabase network
+
+volumes:
+  xinote_uploads:
+    driver: local
+    name: xinote_uploads
+  xinote_logs:
+    driver: local
+    name: xinote_logs

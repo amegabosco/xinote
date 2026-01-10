@@ -36,7 +36,7 @@ logs/
 *.tmp
 *.temp
 
-# Flutter/Dart (exclude from backend repo, but keep xinote-admin/)
+# Flutter/Dart (exclude from backend repo)
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
@@ -53,6 +53,12 @@ lib/
 test/
 *.iml
 analysis_options.yaml
+
+# Keep xinote-admin source, but not build artifacts
+xinote-admin/node_modules/
+xinote-admin/.svelte-kit/
+xinote-admin/build/
+xinote-admin/.vite/
 
 # Project-specific excludes
 programming_history/

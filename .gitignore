@@ -35,3 +35,39 @@ logs/
 # Temporary files
 *.tmp
 *.temp
+
+# Flutter/Dart (exclude from backend repo, but keep xinote-admin/)
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
+.packages
+pubspec.lock
+android/
+ios/
+linux/
+macos/
+windows/
+web/
+lib/
+test/
+*.iml
+analysis_options.yaml
+
+# Project-specific excludes
+programming_history/
+bruno/
+releases/
+tpl_reports/
+vocals/
+docs/
+frontend/
+xinote-backend/
+claude_context_file.md
+AGENTS_SYSTEM.md
+QUICK_START_AGENTS.md
+STRATEGIE_AUTHENTIFICATION.md
+SECURITE_CORRECTIONS.md
+audit_securite.md
+create_icon.swift
+.claude/

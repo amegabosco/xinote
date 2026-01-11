@@ -17,17 +17,30 @@ export const supabaseClient = createClient(
 );
 
 // Admin client for service operations (bypasses RLS)
-export const supabaseAdmin = createClient(
-	PUBLIC_SUPABASE_URL,
-	env.SUPABASE_SERVICE_ROLE_KEY || '',
-	{
-		db: { schema: 'xinote' },
-		auth: {
-			autoRefreshToken: false,
-			persistSession: false
+// Lazy initialization to avoid build-time errors
+let _supabaseAdmin: ReturnType<typeof createClient> | null = null;
+
+export const supabaseAdmin = new Proxy({} as ReturnType<typeof createClient>, {
+	get(target, prop) {
+		if (!_supabaseAdmin) {
+			if (!env.SUPABASE_SERVICE_ROLE_KEY) {
+				throw new Error('SUPABASE_SERVICE_ROLE_KEY is not set');
+			}
+			_supabaseAdmin = createClient(
+				PUBLIC_SUPABASE_URL,
+				env.SUPABASE_SERVICE_ROLE_KEY,
+				{
+					db: { schema: 'xinote' },
+					auth: {
+						autoRefreshToken: false,
+						persistSession: false
+					}
+				}
+			);
 		}
+		return (_supabaseAdmin as any)[prop];
 	}
-);
+});
 
 /**
  * Database types for Xinote schema

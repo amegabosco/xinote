@@ -5,6 +5,9 @@ services:
     build:
       context: ../xinote-admin
       dockerfile: ../docker/Dockerfile
+      args:
+        PUBLIC_SUPABASE_URL: ${SUPABASE_URL}
+        PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
     container_name: xinote-backend
     restart: unless-stopped
     environment:

@@ -15,6 +15,14 @@ RUN npm ci
 # Copy source code
 COPY . ./
 
+# Accept build arguments for PUBLIC_ environment variables
+ARG PUBLIC_SUPABASE_URL
+ARG PUBLIC_SUPABASE_ANON_KEY
+
+# Set environment variables for build time
+ENV PUBLIC_SUPABASE_URL=$PUBLIC_SUPABASE_URL
+ENV PUBLIC_SUPABASE_ANON_KEY=$PUBLIC_SUPABASE_ANON_KEY
+
 # Build SvelteKit app
 RUN npm run build
 

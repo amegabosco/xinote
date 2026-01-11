@@ -5,7 +5,11 @@ const config = {
 	kit: {
 		adapter: adapter({
 			out: 'build'
-		})
+		}),
+		prerender: {
+			handleHttpError: 'warn',
+			entries: []
+		}
 	}
 };
 

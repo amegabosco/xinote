@@ -4,12 +4,8 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import {
-	PUBLIC_SUPABASE_URL,
-	PUBLIC_SUPABASE_ANON_KEY,
-	SUPABASE_SERVICE_ROLE_KEY
-} from '$env/static/public';
-import { SUPABASE_SERVICE_ROLE_KEY as SERVICE_KEY } from '$env/static/private';
+import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
+import { SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
 
 // Client for authenticated operations (RLS enabled)
 export const supabaseClient = createClient(
@@ -23,7 +19,7 @@ export const supabaseClient = createClient(
 // Admin client for service operations (bypasses RLS)
 export const supabaseAdmin = createClient(
 	PUBLIC_SUPABASE_URL,
-	SERVICE_KEY,
+	SUPABASE_SERVICE_ROLE_KEY,
 	{
 		db: { schema: 'xinote' },
 		auth: {

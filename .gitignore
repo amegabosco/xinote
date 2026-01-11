@@ -60,6 +60,9 @@ xinote-admin/.svelte-kit/
 xinote-admin/build/
 xinote-admin/.vite/
 
+# Allow xinote-admin lib directory (SvelteKit server code)
+!xinote-admin/src/lib/
+
 # Project-specific excludes
 programming_history/
 bruno/

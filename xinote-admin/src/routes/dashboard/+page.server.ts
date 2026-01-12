@@ -1,9 +1,8 @@
 import { redirect } from '@sveltejs/kit';
-import type { PageServerLoad } from './$types';
 import { getAuthenticatedDoctor } from '$lib/server/auth';
 import { query } from '$lib/server/db';
 
-export const load: PageServerLoad = async (event) => {
+export const load = async (event: any) => {
 	// Check if doctor is authenticated
 	const doctor = await getAuthenticatedDoctor(event);
 

@@ -1,7 +1,21 @@
 <script lang="ts">
-	import type { PageData } from './$types';
-
-	export let data: PageData;
+	export let data: {
+		doctor: {
+			id: string;
+			full_name: string;
+			email: string;
+			structure?: string;
+			specialization?: string;
+		};
+		recordings: any[];
+		stats: {
+			total_recordings: number;
+			completed_recordings: number;
+			pending_recordings: number;
+			failed_recordings: number;
+			total_patients: number;
+		};
+	};
 
 	function formatDate(dateString: string) {
 		const date = new Date(dateString);

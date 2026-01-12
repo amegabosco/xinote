@@ -27,6 +27,9 @@ export const supabaseAdmin = new Proxy({} as ReturnType<typeof createClient>, {
 				PUBLIC_SUPABASE_URL,
 				env.SUPABASE_SERVICE_ROLE_KEY,
 				{
+					db: {
+						schema: 'xinote'
+					},
 					auth: {
 						autoRefreshToken: false,
 						persistSession: false
@@ -115,7 +118,7 @@ export interface Transcription {
  */
 export async function getDoctorById(doctorId: string): Promise<Doctor | null> {
 	const { data, error } = await supabaseAdmin
-		.from('xinote.doctors')
+		.from('doctors')
 		.select('*')
 		.eq('id', doctorId)
 		.single();
@@ -142,7 +145,7 @@ export async function logAuditEvent(params: {
 	success?: boolean;
 	error_message?: string;
 }) {
-	const { error } = await supabaseAdmin.from('xinote.audit_log').insert({
+	const { error } = await supabaseAdmin.from('audit_log').insert({
 		doctor_id: params.doctor_id,
 		action: params.action,
 		resource_type: params.resource_type,

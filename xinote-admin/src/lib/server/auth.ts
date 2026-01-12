@@ -58,7 +58,7 @@ async function authenticateWithAPIKey(apiKey: string): Promise<string> {
 
 	// Query API keys table
 	const { data: apiKeyRecord, error: keyError } = await supabaseAdmin
-		.from('xinote.api_keys')
+		.from('api_keys')
 		.select('id, doctor_id, key_hash, is_active, last_used_at, scopes')
 		.eq('key_prefix', keyPrefix)
 		.eq('is_active', true)
@@ -74,7 +74,7 @@ async function authenticateWithAPIKey(apiKey: string): Promise<string> {
 
 	// Update last used timestamp
 	await supabaseAdmin
-		.from('xinote.api_keys')
+		.from('api_keys')
 		.update({
 			last_used_at: new Date().toISOString(),
 			request_count: apiKeyRecord.request_count + 1
@@ -122,7 +122,7 @@ export async function verifyScope(
 	if (authHeader?.startsWith('xin_')) {
 		const keyPrefix = authHeader.substring(0, 8);
 		const { data: apiKey } = await supabaseAdmin
-			.from('xinote.api_keys')
+			.from('api_keys')
 			.select('scopes')
 			.eq('key_prefix', keyPrefix)
 			.single();

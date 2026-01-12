@@ -68,7 +68,7 @@ export const POST: RequestHandler = async (event) => {
 
 		// Create recording record in database
 		const { data: recording, error: dbError } = await supabaseAdmin
-			.from('xinote.recordings')
+			.from('recordings')
 			.insert({
 				id: recordingId,
 				doctor_id: doctorId,

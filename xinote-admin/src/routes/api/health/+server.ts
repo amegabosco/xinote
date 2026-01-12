@@ -18,7 +18,7 @@ export const GET: RequestHandler = async () => {
 	try {
 		// Test database connection
 		const { data, error } = await supabaseAdmin
-			.from('xinote.doctors')
+			.from('doctors')
 			.select('count')
 			.limit(1);
 

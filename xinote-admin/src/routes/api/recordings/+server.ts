@@ -24,12 +24,12 @@ export const GET: RequestHandler = async (event) => {
 
 	// Build query
 	let query = supabaseAdmin
-		.from('xinote.recordings')
+		.from('recordings')
 		.select(
 			`
 			*,
-			patient:xinote.patients(id, patient_code),
-			transcription:xinote.transcriptions(
+			patient:patients(id, patient_code),
+			transcription:transcriptions(
 				id,
 				final_transcript,
 				processing_method,

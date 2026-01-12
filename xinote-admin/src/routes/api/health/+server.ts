@@ -4,7 +4,7 @@
  */
 
 import { json } from '@sveltejs/kit';
-import { supabaseAdmin } from '$lib/server/supabase';
+import { query } from '$lib/server/db';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async () => {
@@ -16,14 +16,10 @@ export const GET: RequestHandler = async () => {
 	};
 
 	try {
-		// Test database connection
-		const { data, error } = await supabaseAdmin
-			.from('doctors')
-			.select('count')
-			.limit(1);
-
-		checks.database = error ? 'unhealthy' : 'healthy';
-		checks.database_error = error?.message;
+		// Test database connection with direct PostgreSQL query
+		const result = await query('SELECT COUNT(*) as count FROM doctors LIMIT 1');
+		checks.database = 'healthy';
+		checks.database_tables = 'accessible';
 	} catch (err) {
 		checks.database = 'unhealthy';
 		checks.database_error = err instanceof Error ? err.message : 'Unknown error';

@@ -8,7 +8,7 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { authenticateRequest, verifyScope } from '$lib/server/auth';
-import { supabaseAdmin } from '$lib/server/supabase';
+import { query as dbQuery } from '$lib/server/db';
 
 export const GET: RequestHandler = async (event) => {
 	// Authenticate request
@@ -22,47 +22,70 @@ export const GET: RequestHandler = async (event) => {
 	const status = url.searchParams.get('status');
 	const patientId = url.searchParams.get('patient_id');
 
-	// Build query
-	let query = supabaseAdmin
-		.from('recordings')
-		.select(
-			`
-			*,
-			patient:patients(id, patient_code),
-			transcription:transcriptions(
-				id,
-				final_transcript,
-				processing_method,
-				cloud_confidence_score,
-				created_at
-			)
-		`,
-			{ count: 'exact' }
-		)
-		.eq('doctor_id', doctorId)
-		.order('created_at', { ascending: false })
-		.range(offset, offset + limit - 1);
+	try {
+		// Build SQL query with filters
+		let sql = `
+			SELECT
+				r.*,
+				p.patient_code,
+				t.id as transcription_id,
+				t.final_transcript,
+				t.processing_method,
+				t.cloud_confidence_score,
+				t.created_at as transcription_created_at
+			FROM recordings r
+			LEFT JOIN patients p ON r.patient_id = p.id
+			LEFT JOIN transcriptions t ON r.id = t.recording_id
+			WHERE r.doctor_id = $1
+		`;
 
-	// Apply filters
-	if (status) {
-		query = query.eq('status', status);
+		const params: any[] = [doctorId];
+		let paramIndex = 2;
+
+		if (status) {
+			sql += ` AND r.status = $${paramIndex}`;
+			params.push(status);
+			paramIndex++;
+		}
+
+		if (patientId) {
+			sql += ` AND r.patient_id = $${paramIndex}`;
+			params.push(patientId);
+			paramIndex++;
+		}
+
+		sql += ` ORDER BY r.created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+		params.push(limit, offset);
+
+		// Get total count
+		let countSql = `SELECT COUNT(*) as total FROM recordings WHERE doctor_id = $1`;
+		const countParams: any[] = [doctorId];
+		let countParamIndex = 2;
+
+		if (status) {
+			countSql += ` AND status = $${countParamIndex}`;
+			countParams.push(status);
+			countParamIndex++;
+		}
+
+		if (patientId) {
+			countSql += ` AND patient_id = $${countParamIndex}`;
+			countParams.push(patientId);
+		}
+
+		const [recordings, countResult] = await Promise.all([
+			dbQuery(sql, params),
+			dbQuery(countSql, countParams)
+		]);
+
+		return json({
+			recordings: recordings || [],
+			total: countResult[0]?.total || 0,
+			limit,
+			offset
+		});
+	} catch (err) {
+		console.error('Database error:', err);
+		throw error(500, `Failed to fetch recordings: ${err instanceof Error ? err.message : 'Unknown error'}`);
 	}
-
-	if (patientId) {
-		query = query.eq('patient_id', patientId);
-	}
-
-	const { data: recordings, error: dbError, count } = await query;
-
-	if (dbError) {
-		console.error('Database error:', dbError);
-		throw error(500, `Failed to fetch recordings: ${dbError.message}`);
-	}
-
-	return json({
-		recordings: recordings || [],
-		total: count || 0,
-		limit,
-		offset
-	});
 };

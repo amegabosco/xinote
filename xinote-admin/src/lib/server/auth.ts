@@ -1,10 +1,12 @@
 /**
- * Authentication utilities for API endpoints
+ * Authentication utilities for API endpoints and web dashboard
  */
 
 import { error } from '@sveltejs/kit';
 import { supabaseAdmin, getDoctorById } from './supabase';
+import { query, queryOne } from './db';
 import type { RequestEvent } from '@sveltejs/kit';
+import type { Doctor } from './supabase';
 
 /**
  * Extract doctor ID from Authorization header
@@ -130,5 +132,37 @@ export async function verifyScope(
 		if (!apiKey || !apiKey.scopes.includes(requiredScope)) {
 			throw error(403, `Missing required scope: ${requiredScope}`);
 		}
+	}
+}
+
+/**
+ * Get authenticated doctor from session (for web dashboard)
+ * Uses Supabase session from cookies
+ */
+export async function getAuthenticatedDoctor(event: RequestEvent): Promise<Doctor | null> {
+	// Get session from cookies (set by Supabase Auth)
+	const sessionCookie = event.cookies.get('sb-access-token');
+
+	if (!sessionCookie) {
+		return null;
+	}
+
+	try {
+		const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(sessionCookie);
+
+		if (authError || !user) {
+			return null;
+		}
+
+		// Get doctor record from database
+		const doctor = await queryOne<Doctor>(
+			'SELECT * FROM doctors WHERE id = $1 AND is_active = true',
+			[user.id]
+		);
+
+		return doctor;
+	} catch (err) {
+		console.error('Error getting authenticated doctor:', err);
+		return null;
 	}
 }

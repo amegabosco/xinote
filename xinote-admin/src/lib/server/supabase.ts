@@ -27,9 +27,6 @@ export const supabaseAdmin = new Proxy({} as ReturnType<typeof createClient>, {
 				PUBLIC_SUPABASE_URL,
 				env.SUPABASE_SERVICE_ROLE_KEY,
 				{
-					db: {
-						schema: 'xinote'
-					},
 					auth: {
 						autoRefreshToken: false,
 						persistSession: false

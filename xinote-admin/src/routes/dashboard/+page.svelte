@@ -1,23 +1,8 @@
-<script lang="ts">
-	export let data: {
-		doctor: {
-			id: string;
-			full_name: string;
-			email: string;
-			structure?: string;
-			specialization?: string;
-		};
-		recordings: any[];
-		stats: {
-			total_recordings: number;
-			completed_recordings: number;
-			pending_recordings: number;
-			failed_recordings: number;
-			total_patients: number;
-		};
-	};
+<script>
+	/** @type {any} */
+	export let data;
 
-	function formatDate(dateString: string) {
+	function formatDate(dateString) {
 		const date = new Date(dateString);
 		return date.toLocaleDateString('fr-FR', {
 			year: 'numeric',
@@ -28,14 +13,14 @@
 		});
 	}
 
-	function formatDuration(seconds: number | null) {
+	function formatDuration(seconds) {
 		if (!seconds) return 'N/A';
 		const mins = Math.floor(seconds / 60);
 		const secs = Math.floor(seconds % 60);
 		return `${mins}:${secs.toString().padStart(2, '0')}`;
 	}
 
-	function getStatusColor(status: string) {
+	function getStatusColor(status) {
 		switch (status) {
 			case 'completed':
 				return 'bg-green-100 text-green-800';

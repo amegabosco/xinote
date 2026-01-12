@@ -1,4 +1,4 @@
-<script lang="ts">
+<script>
 	import { supabaseClient } from '$lib/client/supabase';
 	import { goto } from '$app/navigation';
 
@@ -28,7 +28,7 @@
 				await goto('/dashboard');
 			}
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'An error occurred';
+			error = err?.message || 'An error occurred';
 		} finally {
 			loading = false;
 		}

@@ -99,7 +99,7 @@ export async function getStorageUsage(doctorId: string): Promise<{
 	recordings_count: number;
 }> {
 	const { data, error: quotaError } = await supabaseAdmin
-		.from('storage_quotas')
+		.from('xinote.storage_quotas')
 		.select('*')
 		.eq('doctor_id', doctorId)
 		.single();

@@ -1,17 +1,14 @@
-import { json } from '@sveltejs/kit';
+import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { authenticateRequest } from '$lib/server/auth';
 import { supabaseAdmin } from '$lib/server/supabase';
 
-export const POST: RequestHandler = async ({ request, cookies }) => {
-	// Authenticate request
-	const authResult = await authenticateRequest(cookies);
-	if (!authResult.success || !authResult.doctorId) {
-		return json({ error: 'Unauthorized' }, { status: 401 });
-	}
-
+export const POST: RequestHandler = async (event) => {
 	try {
-		const { patient_code, encrypted_name } = await request.json();
+		// Authenticate request - returns doctorId string or throws error
+		const doctorId = await authenticateRequest(event);
+
+		const { patient_code, encrypted_name } = await event.request.json();
 
 		// Validate required fields
 		if (!patient_code || !encrypted_name) {
@@ -26,7 +23,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 			.from('patients')
 			.select('*')
 			.eq('patient_code', patient_code)
-			.eq('doctor_id', authResult.doctorId)
+			.eq('doctor_id', doctorId)
 			.single();
 
 		if (fetchError && fetchError.code !== 'PGRST116') {
@@ -52,7 +49,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 		const { data: newPatient, error: createError } = await supabaseAdmin
 			.from('patients')
 			.insert({
-				doctor_id: authResult.doctorId,
+				doctor_id: doctorId,
 				patient_code: patient_code,
 				encrypted_name: encrypted_name
 			})

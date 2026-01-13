@@ -4,14 +4,30 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
 import { env } from '$env/dynamic/private';
 
+// Get Supabase URL and keys from environment
+const getSupabaseUrl = () => env.PUBLIC_SUPABASE_URL || env.SUPABASE_URL || '';
+const getSupabaseAnonKey = () => env.PUBLIC_SUPABASE_ANON_KEY || env.SUPABASE_ANON_KEY || '';
+const getSupabaseServiceKey = () => env.SUPABASE_SERVICE_ROLE_KEY || '';
+
+// Lazy initialization for client
+let _supabaseClient: ReturnType<typeof createClient> | null = null;
+
 // Client for authenticated operations (RLS enabled)
-export const supabaseClient = createClient(
-	PUBLIC_SUPABASE_URL,
-	PUBLIC_SUPABASE_ANON_KEY
-);
+export const supabaseClient = new Proxy({} as ReturnType<typeof createClient>, {
+	get(target, prop) {
+		if (!_supabaseClient) {
+			const url = getSupabaseUrl();
+			const anonKey = getSupabaseAnonKey();
+			if (!url || !anonKey) {
+				throw new Error('Supabase URL and anon key must be set');
+			}
+			_supabaseClient = createClient(url, anonKey);
+		}
+		return (_supabaseClient as any)[prop];
+	}
+});
 
 // Admin client for service operations (bypasses RLS)
 // Lazy initialization to avoid build-time errors
@@ -20,12 +36,14 @@ let _supabaseAdmin: ReturnType<typeof createClient> | null = null;
 export const supabaseAdmin = new Proxy({} as ReturnType<typeof createClient>, {
 	get(target, prop) {
 		if (!_supabaseAdmin) {
-			if (!env.SUPABASE_SERVICE_ROLE_KEY) {
-				throw new Error('SUPABASE_SERVICE_ROLE_KEY is not set');
+			const url = getSupabaseUrl();
+			const serviceKey = getSupabaseServiceKey();
+			if (!url || !serviceKey) {
+				throw new Error('Supabase URL and service role key must be set');
 			}
 			_supabaseAdmin = createClient(
-				PUBLIC_SUPABASE_URL,
-				env.SUPABASE_SERVICE_ROLE_KEY,
+				url,
+				serviceKey,
 				{
 					auth: {
 						autoRefreshToken: false,

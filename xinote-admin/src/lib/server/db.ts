@@ -5,7 +5,6 @@
 
 import { Pool } from 'pg';
 import { env } from '$env/dynamic/private';
-import { PUBLIC_SUPABASE_URL } from '$env/static/public';
 
 // Parse Supabase URL to get database connection details
 function parseSupabaseUrl(url: string) {
@@ -27,7 +26,11 @@ let pool: Pool | null = null;
 
 export function getDatabase() {
 	if (!pool) {
-		const config = parseSupabaseUrl(PUBLIC_SUPABASE_URL);
+		const supabaseUrl = env.PUBLIC_SUPABASE_URL || env.SUPABASE_URL || '';
+		if (!supabaseUrl) {
+			throw new Error('SUPABASE_URL must be set');
+		}
+		const config = parseSupabaseUrl(supabaseUrl);
 		pool = new Pool({
 			...config,
 			max: 20,

@@ -4,12 +4,18 @@
  */
 
 import { query } from './db';
-import { getRecordingPath } from './storage';
 import fs from 'fs';
+import path from 'path';
 import FormData from 'form-data';
 
 // Get API key from environment (runtime, not build time)
 const getApiKey = () => process.env.OPENAI_API_KEY || '';
+
+// Get full path to recording file
+const getRecordingPath = (doctorId: string, filePath: string): string => {
+	const uploadsDir = process.env.UPLOAD_DIR || '/app/uploads';
+	return path.join(uploadsDir, filePath);
+};
 
 interface WhisperResponse {
 	text: string;

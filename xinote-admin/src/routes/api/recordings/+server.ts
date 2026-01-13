@@ -31,7 +31,8 @@ export const GET: RequestHandler = async (event) => {
 				t.id as transcription_id,
 				t.final_transcript,
 				t.processing_method,
-				t.cloud_confidence_score,
+				t.whisper_confidence_score,
+				t.local_confidence_score,
 				t.created_at as transcription_created_at
 			FROM recordings r
 			LEFT JOIN patients p ON r.patient_id = p.id

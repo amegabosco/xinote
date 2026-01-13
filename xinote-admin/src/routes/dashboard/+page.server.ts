@@ -18,7 +18,8 @@ export const load = async (event: any) => {
 			p.encrypted_name as patient_name,
 			t.final_transcript,
 			t.processing_method,
-			t.cloud_confidence_score
+			t.whisper_confidence_score,
+			t.local_confidence_score
 		FROM recordings r
 		LEFT JOIN patients p ON r.patient_id = p.id
 		LEFT JOIN transcriptions t ON r.id = t.recording_id

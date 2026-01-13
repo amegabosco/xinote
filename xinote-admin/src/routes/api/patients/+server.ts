@@ -1,7 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { authenticateRequest } from '$lib/server/auth';
-import { supabaseAdmin } from '$lib/server/supabase';
+import { query, queryOne } from '$lib/server/db';
 
 export const POST: RequestHandler = async (event) => {
 	try {
@@ -25,19 +25,13 @@ export const POST: RequestHandler = async (event) => {
 
 		// Check if patient already exists for this doctor
 		console.log('[POST /api/patients] Checking for existing patient:', { patient_code, doctor_id: doctorId });
-		const { data: existingPatient, error: fetchError } = await supabaseAdmin
-			.from('patients')
-			.select('*')
-			.eq('patient_code', patient_code)
-			.eq('doctor_id', doctorId)
-			.single();
 
-		if (fetchError && fetchError.code !== 'PGRST116') {
-			// PGRST116 = no rows returned, which is fine
-			console.error('[POST /api/patients] Database fetch error:', fetchError);
-			console.error('[POST /api/patients] Error details:', JSON.stringify(fetchError, null, 2));
-			return json({ error: 'Database error', details: fetchError.message }, { status: 500 });
-		}
+		const existingPatient = await queryOne(
+			`SELECT id, patient_code, encrypted_name, created_at
+			 FROM patients
+			 WHERE patient_code = $1 AND doctor_id = $2`,
+			[patient_code, doctorId]
+		);
 
 		// If patient exists, return it
 		if (existingPatient) {
@@ -55,23 +49,22 @@ export const POST: RequestHandler = async (event) => {
 
 		// Create new patient
 		console.log('[POST /api/patients] Creating new patient');
-		const { data: newPatient, error: createError } = await supabaseAdmin
-			.from('patients')
-			.insert({
-				doctor_id: doctorId,
-				patient_code: patient_code,
-				encrypted_name: encrypted_name
-			})
-			.select()
-			.single();
 
-		if (createError) {
-			console.error('[POST /api/patients] Error creating patient:', createError);
-			console.error('[POST /api/patients] Create error details:', JSON.stringify(createError, null, 2));
-			return json({ error: 'Failed to create patient', details: createError.message }, { status: 500 });
+		const newPatients = await query(
+			`INSERT INTO patients (doctor_id, patient_code, encrypted_name)
+			 VALUES ($1, $2, $3)
+			 RETURNING id, patient_code, encrypted_name, created_at`,
+			[doctorId, patient_code, encrypted_name]
+		);
+
+		if (!newPatients || newPatients.length === 0) {
+			console.error('[POST /api/patients] Failed to create patient - no rows returned');
+			return json({ error: 'Failed to create patient' }, { status: 500 });
 		}
 
+		const newPatient = newPatients[0];
 		console.log('[POST /api/patients] Patient created successfully:', newPatient.id);
+
 		return json({
 			success: true,
 			patient: {

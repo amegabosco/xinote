@@ -1,0 +1,29 @@
+# Prevent .env files from being copied into Docker image
+.env
+.env.*
+.env.local
+.env.example
+
+# Node modules (installed via npm ci)
+node_modules/
+
+# Build output
+build/
+.svelte-kit/
+
+# Development files
+.vscode/
+.idea/
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+README.md
+*.md
+
+# Test files
+tests/
+*.test.ts
+*.spec.ts

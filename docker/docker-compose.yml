@@ -4,7 +4,7 @@ services:
       context: ../xinote-admin
       dockerfile: ../docker/Dockerfile
       args:
-        PUBLIC_SUPABASE_URL: ${SUPABASE_URL}
+        PUBLIC_SUPABASE_URL: ${PUBLIC_SUPABASE_URL}
         PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
     container_name: xinote-backend
     restart: unless-stopped
@@ -17,7 +17,8 @@ services:
       ORIGIN: https://xinote.amega.one
 
       # Supabase configuration (uses your existing Supabase instance)
-      PUBLIC_SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_URL: ${SUPABASE_URL}  # Internal Docker URL for server-side
+      PUBLIC_SUPABASE_URL: ${PUBLIC_SUPABASE_URL}  # Public URL for client-side
       PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
       SUPABASE_DB_PASSWORD: ${SUPABASE_DB_PASSWORD}

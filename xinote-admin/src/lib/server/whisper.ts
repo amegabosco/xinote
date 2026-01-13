@@ -3,11 +3,13 @@
  * Uses OpenAI Whisper API to transcribe audio recordings
  */
 
-import { OPENAI_API_KEY } from '$env/static/private';
 import { query } from './db';
 import { getRecordingPath } from './storage';
 import fs from 'fs';
 import FormData from 'form-data';
+
+// Get API key from environment (runtime, not build time)
+const getApiKey = () => process.env.OPENAI_API_KEY || '';
 
 interface WhisperResponse {
 	text: string;
@@ -69,11 +71,20 @@ export async function transcribeWithWhisper(
 			formData.append('temperature', options.temperature.toString());
 		}
 
+		// Check API key
+		const apiKey = getApiKey();
+		if (!apiKey) {
+			return {
+				success: false,
+				error: 'OpenAI API key not configured'
+			};
+		}
+
 		// Make API request
 		const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
 			method: 'POST',
 			headers: {
-				Authorization: `Bearer ${OPENAI_API_KEY}`,
+				Authorization: `Bearer ${apiKey}`,
 				...formData.getHeaders()
 			},
 			body: formData

@@ -5,10 +5,12 @@ import { supabaseAdmin } from '$lib/server/supabase';
 
 export const POST: RequestHandler = async (event) => {
 	try {
-		// Authenticate request - returns doctorId string or throws error
+		// Authenticate request - returns doctorId string or throws SvelteKit error
 		const doctorId = await authenticateRequest(event);
 
-		const { patient_code, encrypted_name } = await event.request.json();
+		// Parse request body
+		const body = await event.request.json();
+		const { patient_code, encrypted_name } = body;
 
 		// Validate required fields
 		if (!patient_code || !encrypted_name) {
@@ -71,7 +73,14 @@ export const POST: RequestHandler = async (event) => {
 			}
 		});
 	} catch (err) {
-		console.error('Unexpected error in /api/patients:', err);
+		console.error('Error in /api/patients:', err);
+
+		// Re-throw SvelteKit errors (like authentication errors)
+		if (err && typeof err === 'object' && 'status' in err) {
+			throw err;
+		}
+
+		// Return generic error for unexpected errors
 		return json({ error: 'Internal server error' }, { status: 500 });
 	}
 };

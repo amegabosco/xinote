@@ -7,13 +7,16 @@ export const POST: RequestHandler = async (event) => {
 	try {
 		// Authenticate request - returns doctorId string or throws SvelteKit error
 		const doctorId = await authenticateRequest(event);
+		console.log('[POST /api/patients] Authenticated doctorId:', doctorId);
 
 		// Parse request body
 		const body = await event.request.json();
 		const { patient_code, encrypted_name } = body;
+		console.log('[POST /api/patients] Request:', { patient_code, encrypted_name });
 
 		// Validate required fields
 		if (!patient_code || !encrypted_name) {
+			console.log('[POST /api/patients] Missing required fields');
 			return json(
 				{ error: 'Missing required fields: patient_code and encrypted_name' },
 				{ status: 400 }
@@ -21,6 +24,7 @@ export const POST: RequestHandler = async (event) => {
 		}
 
 		// Check if patient already exists for this doctor
+		console.log('[POST /api/patients] Checking for existing patient:', { patient_code, doctor_id: doctorId });
 		const { data: existingPatient, error: fetchError } = await supabaseAdmin
 			.from('patients')
 			.select('*')
@@ -30,12 +34,14 @@ export const POST: RequestHandler = async (event) => {
 
 		if (fetchError && fetchError.code !== 'PGRST116') {
 			// PGRST116 = no rows returned, which is fine
-			console.error('Error fetching patient:', fetchError);
-			return json({ error: 'Database error' }, { status: 500 });
+			console.error('[POST /api/patients] Database fetch error:', fetchError);
+			console.error('[POST /api/patients] Error details:', JSON.stringify(fetchError, null, 2));
+			return json({ error: 'Database error', details: fetchError.message }, { status: 500 });
 		}
 
 		// If patient exists, return it
 		if (existingPatient) {
+			console.log('[POST /api/patients] Patient exists, returning:', existingPatient.id);
 			return json({
 				success: true,
 				patient: {
@@ -48,6 +54,7 @@ export const POST: RequestHandler = async (event) => {
 		}
 
 		// Create new patient
+		console.log('[POST /api/patients] Creating new patient');
 		const { data: newPatient, error: createError } = await supabaseAdmin
 			.from('patients')
 			.insert({
@@ -59,10 +66,12 @@ export const POST: RequestHandler = async (event) => {
 			.single();
 
 		if (createError) {
-			console.error('Error creating patient:', createError);
-			return json({ error: 'Failed to create patient' }, { status: 500 });
+			console.error('[POST /api/patients] Error creating patient:', createError);
+			console.error('[POST /api/patients] Create error details:', JSON.stringify(createError, null, 2));
+			return json({ error: 'Failed to create patient', details: createError.message }, { status: 500 });
 		}
 
+		console.log('[POST /api/patients] Patient created successfully:', newPatient.id);
 		return json({
 			success: true,
 			patient: {

@@ -160,6 +160,68 @@ CREATE INDEX idx_transcriptions_created ON xinote.transcriptions(created_at DESC
 CREATE INDEX idx_transcriptions_medical_terms ON xinote.transcriptions USING GIN (medical_terms_detected);
 
 -- ==============================================
+-- REPORT METADATA TABLE (PDF Report Generation)
+-- ==============================================
+CREATE TABLE IF NOT EXISTS xinote.report_metadata (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    report_id VARCHAR(50) UNIQUE NOT NULL, -- Format: R-MMDDHHMM-XXXXXX
+    recording_id UUID NOT NULL REFERENCES xinote.recordings(id) ON DELETE CASCADE,
+    doctor_id UUID NOT NULL REFERENCES xinote.doctors(id) ON DELETE CASCADE,
+    patient_id UUID REFERENCES xinote.patients(id) ON DELETE SET NULL,
+
+    -- PDF storage
+    pdf_url TEXT,
+    pdf_file_size_bytes BIGINT,
+    pdf_storage_path TEXT, -- Path in Supabase Storage
+
+    -- Generation metadata
+    generation_status TEXT NOT NULL DEFAULT 'processing' CHECK (generation_status IN (
+        'processing', 'completed', 'error', 'cancelled'
+    )),
+
+    -- AI extraction results (structured content from transcription)
+    ai_extraction_data JSONB,
+    -- Structure: {
+    --   observations: ["observation 1", "observation 2", ...],
+    --   analysis_summary: "Synthesized findings paragraph",
+    --   medical_conclusion: "Final diagnosis/recommendation"
+    -- }
+
+    -- Performance metrics
+    ai_processing_time_ms INTEGER,
+    pdf_generation_time_ms INTEGER,
+    total_generation_time_ms INTEGER,
+
+    -- Timestamps
+    requested_at TIMESTAMPTZ DEFAULT NOW(),
+    completed_at TIMESTAMPTZ,
+
+    -- Error tracking
+    error_message TEXT,
+    error_details JSONB,
+    retry_count INTEGER DEFAULT 0,
+    max_retries INTEGER DEFAULT 3,
+
+    -- Version tracking
+    report_version INTEGER DEFAULT 1,
+    template_version TEXT DEFAULT '1.0.0',
+
+    -- Audit
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+
+    CONSTRAINT unique_report_id UNIQUE (report_id)
+);
+
+-- Indexes for report_metadata
+CREATE INDEX idx_report_metadata_recording ON xinote.report_metadata(recording_id);
+CREATE INDEX idx_report_metadata_doctor ON xinote.report_metadata(doctor_id);
+CREATE INDEX idx_report_metadata_patient ON xinote.report_metadata(patient_id);
+CREATE INDEX idx_report_metadata_status ON xinote.report_metadata(generation_status);
+CREATE INDEX idx_report_metadata_report_id ON xinote.report_metadata(report_id);
+CREATE INDEX idx_report_metadata_requested ON xinote.report_metadata(requested_at DESC);
+
+-- ==============================================
 -- AUDIT LOG TABLE (GDPR Compliance)
 -- ==============================================
 CREATE TABLE IF NOT EXISTS xinote.audit_log (
@@ -172,6 +234,7 @@ CREATE TABLE IF NOT EXISTS xinote.audit_log (
         'recording_upload', 'recording_view', 'recording_delete',
         'patient_create', 'patient_view', 'patient_update', 'patient_delete',
         'transcription_view', 'transcription_export',
+        'report_generate', 'report_view', 'report_download', 'report_delete',
         'settings_update', 'data_export'
     )),
     resource_type TEXT,
@@ -261,6 +324,9 @@ CREATE TRIGGER update_doctors_updated_at BEFORE UPDATE ON xinote.doctors
 CREATE TRIGGER update_patients_updated_at BEFORE UPDATE ON xinote.patients
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER update_report_metadata_updated_at BEFORE UPDATE ON xinote.report_metadata
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 -- Function to log audit events
 CREATE OR REPLACE FUNCTION log_audit_event(
     p_doctor_id UUID,
@@ -297,6 +363,7 @@ ALTER TABLE xinote.doctors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE xinote.patients ENABLE ROW LEVEL SECURITY;
 ALTER TABLE xinote.recordings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE xinote.transcriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE xinote.report_metadata ENABLE ROW LEVEL SECURITY;
 ALTER TABLE xinote.audit_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE xinote.api_keys ENABLE ROW LEVEL SECURITY;
 
@@ -380,6 +447,15 @@ CREATE POLICY "Doctors can update their own API keys"
     ON xinote.api_keys FOR UPDATE
     USING (doctor_id::text = auth.uid()::text);
 
+-- Report Metadata: Doctors can access reports for their own recordings
+CREATE POLICY "Doctors can view their own reports"
+    ON xinote.report_metadata FOR SELECT
+    USING (doctor_id::text = auth.uid()::text);
+
+CREATE POLICY "Service role can manage reports"
+    ON xinote.report_metadata FOR ALL
+    USING (auth.jwt()->>'role' = 'service_role');
+
 -- ==============================================
 -- VIEWS FOR COMMON QUERIES
 -- ==============================================
@@ -435,6 +511,7 @@ COMMENT ON TABLE xinote.doctors IS 'Medical practitioners using the Xinote app';
 COMMENT ON TABLE xinote.patients IS 'Patient records with encrypted sensitive data';
 COMMENT ON TABLE xinote.recordings IS 'Audio recordings of medical consultations';
 COMMENT ON TABLE xinote.transcriptions IS 'Transcriptions from local and Whisper API';
+COMMENT ON TABLE xinote.report_metadata IS 'Generated PDF medical reports with AI-extracted content';
 COMMENT ON TABLE xinote.audit_log IS 'GDPR-compliant audit trail of all actions';
 COMMENT ON TABLE xinote.api_keys IS 'API keys for Flutter app authentication';
 
@@ -447,6 +524,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON xinote.doctors TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON xinote.patients TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON xinote.recordings TO authenticated;
 GRANT SELECT ON xinote.transcriptions TO authenticated;
+GRANT SELECT ON xinote.report_metadata TO authenticated;
 GRANT SELECT ON xinote.audit_log TO authenticated;
 GRANT SELECT, INSERT, UPDATE ON xinote.api_keys TO authenticated;
 
@@ -462,7 +540,7 @@ GRANT ALL ON ALL FUNCTIONS IN SCHEMA xinote TO service_role;
 DO $$
 BEGIN
     RAISE NOTICE '✅ Xinote database schema created successfully!';
-    RAISE NOTICE '📊 Tables: doctors, patients, recordings, transcriptions, audit_log, api_keys';
+    RAISE NOTICE '📊 Tables: doctors, patients, recordings, transcriptions, report_metadata, audit_log, api_keys';
     RAISE NOTICE '🔒 Row Level Security enabled on all tables';
-    RAISE NOTICE '📝 Next: Configure Supabase Storage bucket for audio files';
+    RAISE NOTICE '📝 Next: Configure Supabase Storage buckets for audio files and PDF reports';
 END $$;

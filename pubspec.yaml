@@ -54,8 +54,10 @@ dependencies:
   # Network and connectivity
   connectivity_plus: ^7.0.0
   http: ^1.2.1
-  
-  
+
+  # PDF viewing and file handling
+  open_file: ^3.3.2
+
   # Settings and preferences
   settings_ui: ^2.0.2
   

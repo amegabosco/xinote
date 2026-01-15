@@ -43,6 +43,7 @@ services:
     networks:
       - xinote_network
       - supabase_default  # Connect to existing Supabase network
+      - edge-proxy  # Connect to Caddy's network for reverse proxy
 
     ports:
       - "3001:3000"  # Expose on port 3001 (avoiding conflicts)
@@ -67,6 +68,9 @@ networks:
 
   supabase_default:
     external: true  # Use existing Supabase network
+
+  edge-proxy:
+    external: true  # Use existing Caddy network
 
 volumes:
   xinote_uploads:

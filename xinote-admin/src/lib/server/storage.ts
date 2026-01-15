@@ -38,11 +38,21 @@ export async function uploadAudioFile(params: {
 	const arrayBuffer = await file.arrayBuffer();
 	const uint8Array = new Uint8Array(arrayBuffer);
 
+	// Map extensions to proper MIME types
+	const mimeTypes: Record<string, string> = {
+		m4a: 'audio/mp4',
+		mp3: 'audio/mpeg',
+		wav: 'audio/wav',
+		aac: 'audio/aac'
+	};
+
+	const contentType = mimeTypes[extension] || `audio/${extension}`;
+
 	// Upload to Supabase Storage
 	const { data, error: uploadError } = await supabaseAdmin.storage
 		.from(STORAGE_BUCKET)
 		.upload(filePath, uint8Array, {
-			contentType: file.type || `audio/${extension}`,
+			contentType: contentType,
 			upsert: false, // Don't allow overwriting
 			cacheControl: '3600'
 		});

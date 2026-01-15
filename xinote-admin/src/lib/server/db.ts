@@ -12,7 +12,7 @@ function parseSupabaseUrl(url: string) {
 	// Database is accessible at: postgresql://postgres:[password]@db.xxx.supabase.co:5432/postgres
 	const projectRef = url.replace('https://', '').replace('.supabase.co', '').split('.')[0];
 	return {
-		host: 'supabase-db', // Using Docker network name
+		host: 'supabase-db', // Local Docker Supabase database
 		port: 5432,
 		database: 'postgres',
 		user: 'postgres',

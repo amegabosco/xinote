@@ -84,35 +84,67 @@ else
     echo -e "${YELLOW}⚠️  Storage setup had warnings (this is normal if bucket exists)${NC}"
 fi
 
-# Step 5: Verify tables were created
+# Step 5: Run database migrations
+echo -e "\n${YELLOW}🔄 Running database migrations...${NC}"
+
+MIGRATIONS_DIR="$(dirname $(dirname "$SCRIPT_DIR"))/database/migrations"
+
+if [ -d "$MIGRATIONS_DIR" ]; then
+    MIGRATION_COUNT=0
+    for migration in "$MIGRATIONS_DIR"/*.sql; do
+        if [ -f "$migration" ]; then
+            MIGRATION_FILE=$(basename "$migration")
+            echo -e "${BLUE}  → Applying $MIGRATION_FILE${NC}"
+
+            docker exec -i supabase-db psql -U postgres -d postgres < "$migration"
+
+            if [ $? -eq 0 ]; then
+                echo -e "${GREEN}    ✅ $MIGRATION_FILE applied${NC}"
+                MIGRATION_COUNT=$((MIGRATION_COUNT + 1))
+            else
+                echo -e "${YELLOW}    ⚠️  $MIGRATION_FILE had warnings (may already exist)${NC}"
+            fi
+        fi
+    done
+
+    if [ $MIGRATION_COUNT -gt 0 ]; then
+        echo -e "${GREEN}✅ Applied $MIGRATION_COUNT migration(s)${NC}"
+    else
+        echo -e "${YELLOW}⚠️  No new migrations applied${NC}"
+    fi
+else
+    echo -e "${YELLOW}⚠️  Migrations directory not found: $MIGRATIONS_DIR${NC}"
+fi
+
+# Step 6: Verify tables were created
 echo -e "\n${YELLOW}🔍 Verifying database setup...${NC}"
 
 TABLES=$(docker exec supabase-db psql -U postgres -d postgres -t -c "
     SELECT COUNT(*) FROM information_schema.tables
     WHERE table_schema = 'xinote'
-    AND table_name IN ('doctors', 'patients', 'recordings', 'transcriptions', 'audit_log', 'api_keys');
+    AND table_name IN ('doctors', 'patients', 'recordings', 'transcriptions', 'audit_log', 'api_keys', 'report_metadata');
 ")
 
 TABLES=$(echo $TABLES | tr -d ' ')
 
-if [ "$TABLES" -eq 6 ]; then
-    echo -e "${GREEN}✅ All 6 tables created successfully${NC}"
+if [ "$TABLES" -eq 7 ]; then
+    echo -e "${GREEN}✅ All 7 tables created successfully${NC}"
 else
-    echo -e "${YELLOW}⚠️  Expected 6 tables, found $TABLES${NC}"
+    echo -e "${YELLOW}⚠️  Expected 7 tables, found $TABLES${NC}"
 fi
 
-# Step 6: Show table information
+# Step 7: Show table information
 echo -e "\n${BLUE}📊 Database Tables:${NC}"
 docker exec supabase-db psql -U postgres -d postgres -c "
     SELECT table_name,
            pg_size_pretty(pg_total_relation_size(('xinote.' || quote_ident(table_name))::regclass)) as size
     FROM information_schema.tables
     WHERE table_schema = 'xinote'
-    AND table_name IN ('doctors', 'patients', 'recordings', 'transcriptions', 'audit_log', 'api_keys', 'storage_quotas')
+    AND table_name IN ('doctors', 'patients', 'recordings', 'transcriptions', 'audit_log', 'api_keys', 'storage_quotas', 'report_metadata')
     ORDER BY table_name;
 "
 
-# Step 7: Get Supabase credentials for .env file
+# Step 8: Get Supabase credentials for .env file
 echo -e "\n${BLUE}🔑 Supabase Credentials for Xinote .env:${NC}"
 echo "================================"
 
@@ -147,7 +179,7 @@ echo "SUPABASE_SERVICE_ROLE_KEY=${SERVICE_ROLE_KEY}"
 
 echo -e "\n${YELLOW}⚠️  Copy these values to /opt/xinote-backend/.env${NC}"
 
-# Step 8: Create a test doctor account (optional)
+# Step 9: Create a test doctor account (optional)
 echo -e "\n${YELLOW}👤 Create test doctor account? (y/N)${NC}"
 read -r CREATE_TEST_DOCTOR
 
@@ -177,7 +209,7 @@ if [ "$CREATE_TEST_DOCTOR" = "y" ] || [ "$CREATE_TEST_DOCTOR" = "Y" ]; then
     echo -e "${BLUE}ID: 00000000-0000-0000-0000-000000000001${NC}"
 fi
 
-# Step 9: Summary
+# Step 10: Summary
 echo -e "\n${GREEN}================================${NC}"
 echo -e "${GREEN}✅ Database setup complete!${NC}"
 echo -e "${GREEN}================================${NC}"

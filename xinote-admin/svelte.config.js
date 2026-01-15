@@ -9,6 +9,11 @@ const config = {
 		prerender: {
 			handleHttpError: 'warn',
 			entries: []
+		},
+		csrf: {
+			// Disable CSRF protection for API endpoints
+			// API endpoints use token-based authentication (JWT/API keys) instead
+			checkOrigin: false
 		}
 	}
 };

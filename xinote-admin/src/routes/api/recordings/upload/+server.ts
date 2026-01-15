@@ -77,11 +77,9 @@ export const POST: RequestHandler = async (event) => {
 				file_size_bytes: fileSize,
 				audio_format: audioFile.name.split('.').pop()?.toLowerCase() || 'm4a',
 				exam_datetime: examDatetime,
-				exam_type: examType,
-				status: 'pending',
-				device_info: deviceInfo,
-				notes: notes,
-				metadata: parsedMetadata
+				status: 'uploaded',
+				recording_device: deviceInfo,
+				notes: notes
 			})
 			.select()
 			.single();

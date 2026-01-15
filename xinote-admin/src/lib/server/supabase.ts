@@ -98,16 +98,14 @@ export interface Recording {
 	duration_seconds?: number;
 	audio_format: string;
 	exam_datetime: string;
-	exam_type?: string;
-	status: 'pending' | 'processing' | 'completed' | 'failed' | 'deleted';
-	metadata?: Record<string, any>;
-	device_info?: string;
+	status: 'uploaded' | 'transcribing' | 'completed' | 'error' | 'deleted';
+	recording_device?: string;
+	error_message?: string;
 	audio_quality_score?: number;
 	background_noise_level?: 'low' | 'medium' | 'high';
 	notes?: string;
 	tags: string[];
 	created_at: string;
-	updated_at: string;
 }
 
 export interface Transcription {

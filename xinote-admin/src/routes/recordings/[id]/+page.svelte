@@ -1,9 +1,9 @@
-<script lang="ts">
-	import type { PageData } from './$types';
+<script>
+	// Type imports removed for compatibility
 
-	export let data: PageData;
+	export let data;
 
-	function formatDate(dateString: string | null) {
+	function formatDate(dateString) {
 		if (!dateString) return 'N/A';
 		const date = new Date(dateString);
 		return date.toLocaleString('fr-FR', {
@@ -16,21 +16,21 @@
 		});
 	}
 
-	function formatDuration(seconds: number | null) {
+	function formatDuration(seconds) {
 		if (!seconds) return 'N/A';
 		const mins = Math.floor(seconds / 60);
 		const secs = Math.floor(seconds % 60);
 		return `${mins}:${secs.toString().padStart(2, '0')}`;
 	}
 
-	function formatFileSize(bytes: number | null) {
+	function formatFileSize(bytes) {
 		if (!bytes) return 'N/A';
 		if (bytes < 1024) return bytes + ' B';
 		if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
 		return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
 	}
 
-	function getStatusColor(status: string) {
+	function getStatusColor(status) {
 		switch (status) {
 			case 'completed':
 				return 'bg-green-100 text-green-800';
@@ -46,7 +46,7 @@
 		}
 	}
 
-	function getConfidenceColor(score: number | null) {
+	function getConfidenceColor(score) {
 		if (!score) return 'text-gray-500';
 		if (score >= 0.9) return 'text-green-600';
 		if (score >= 0.7) return 'text-yellow-600';

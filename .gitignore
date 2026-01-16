@@ -71,7 +71,6 @@ tpl_reports/
 vocals/
 docs/
 frontend/
-xinote-backend/
 claude_context_file.md
 AGENTS_SYSTEM.md
 QUICK_START_AGENTS.md

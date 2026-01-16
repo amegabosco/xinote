@@ -1,12 +1,12 @@
-<script lang="ts">
+<script>
 	import { goto } from '$app/navigation';
 
 	export let data;
 
 	let showModal = false;
-	let selectedRecording: any = null;
+	let selectedRecording = null;
 
-	function formatDate(dateString: string | null) {
+	function formatDate(dateString) {
 		if (!dateString) return 'N/A';
 		const date = new Date(dateString);
 		return date.toLocaleString('fr-FR', {
@@ -18,21 +18,21 @@
 		});
 	}
 
-	function formatDuration(seconds: number | null) {
+	function formatDuration(seconds) {
 		if (!seconds) return 'N/A';
 		const mins = Math.floor(seconds / 60);
 		const secs = Math.floor(seconds % 60);
 		return `${mins}:${secs.toString().padStart(2, '0')}`;
 	}
 
-	function formatFileSize(bytes: number | null) {
+	function formatFileSize(bytes) {
 		if (!bytes) return 'N/A';
 		if (bytes < 1024) return bytes + ' B';
 		if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
 		return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
 	}
 
-	function getStatusColor(status: string) {
+	function getStatusColor(status) {
 		switch (status) {
 			case 'completed':
 				return 'bg-green-100 text-green-800';
@@ -47,14 +47,14 @@
 		}
 	}
 
-	function getConfidenceColor(score: number | null) {
+	function getConfidenceColor(score) {
 		if (!score) return 'text-gray-500';
 		if (score >= 0.9) return 'text-green-600';
 		if (score >= 0.7) return 'text-yellow-600';
 		return 'text-red-600';
 	}
 
-	function openModal(recording: any) {
+	function openModal(recording) {
 		selectedRecording = recording;
 		showModal = true;
 	}
@@ -64,11 +64,11 @@
 		selectedRecording = null;
 	}
 
-	function goToPage(page: number) {
+	function goToPage(page) {
 		goto(`/dashboard?page=${page}&limit=${data.pagination.limit}`);
 	}
 
-	async function transcribeRecording(recordingId: string) {
+	async function transcribeRecording(recordingId) {
 		try {
 			const response = await fetch(`/api/recordings/${recordingId}/transcribe`, {
 				method: 'POST'
@@ -88,7 +88,7 @@
 		}
 	}
 
-	async function generateReport(recordingId: string) {
+	async function generateReport(recordingId) {
 		try {
 			const response = await fetch(`/api/recordings/${recordingId}/generate-report`, {
 				method: 'POST'
@@ -108,7 +108,7 @@
 		}
 	}
 
-	function handleKeydown(event: KeyboardEvent) {
+	function handleKeydown(event) {
 		if (event.key === 'Escape' && showModal) {
 			closeModal();
 		}

@@ -8,7 +8,10 @@ const config = {
 		}),
 		prerender: {
 			handleHttpError: 'warn',
-			entries: []
+			entries: [],
+			handleMissingId: 'ignore',
+			handleEntryGeneratorMismatch: 'ignore',
+			handleUnseenRoutes: 'ignore'
 		},
 		csrf: {
 			// Disable CSRF protection for API endpoints
